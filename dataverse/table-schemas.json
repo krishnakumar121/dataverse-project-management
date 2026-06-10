@@ -1,0 +1,562 @@
+# Dataverse Table Schemas
+
+This document contains the detailed schema definitions for all Dataverse tables in the Project Management App.
+
+## Table: Project
+
+**Logical Name:** crb97_project  
+**Display Name:** Project  
+**Plural Name:** Projects  
+**Ownership:** User  
+**Access Level:** Organization  
+
+### Columns
+
+```json
+{
+  "columns": [
+    {
+      "logicalName": "crb97_projectid",
+      "displayName": "Project ID",
+      "dataType": "Uniqueidentifier",
+      "isPrimaryKey": true
+    },
+    {
+      "logicalName": "crb97_name",
+      "displayName": "Project Name",
+      "dataType": "String",
+      "maxLength": 200,
+      "required": true,
+      "searchable": true
+    },
+    {
+      "logicalName": "crb97_description",
+      "displayName": "Description",
+      "dataType": "Text",
+      "maxLength": 2000
+    },
+    {
+      "logicalName": "crb97_startdate",
+      "displayName": "Start Date",
+      "dataType": "DateTime",
+      "dateTimeFormat": "DateOnly",
+      "required": true
+    },
+    {
+      "logicalName": "crb97_enddate",
+      "displayName": "End Date",
+      "dataType": "DateTime",
+      "dateTimeFormat": "DateOnly",
+      "required": true
+    },
+    {
+      "logicalName": "crb97_status",
+      "displayName": "Status",
+      "dataType": "Picklist",
+      "required": true,
+      "options": [
+        {"value": 100000000, "label": "New"},
+        {"value": 100000001, "label": "Active"},
+        {"value": 100000002, "label": "On Hold"},
+        {"value": 100000003, "label": "Closed"},
+        {"value": 100000004, "label": "Cancelled"}
+      ]
+    },
+    {
+      "logicalName": "crb97_priority",
+      "displayName": "Priority",
+      "dataType": "Picklist",
+      "required": true,
+      "options": [
+        {"value": 100000000, "label": "Low"},
+        {"value": 100000001, "label": "Medium"},
+        {"value": 100000002, "label": "High"},
+        {"value": 100000003, "label": "Critical"}
+      ]
+    },
+    {
+      "logicalName": "crb97_budget",
+      "displayName": "Budget",
+      "dataType": "Money",
+      "precisionSource": 2,
+      "minValue": 0
+    },
+    {
+      "logicalName": "crb97_owner",
+      "displayName": "Owner",
+      "dataType": "Lookup",
+      "referenceEntity": "systemuser",
+      "required": true
+    },
+    {
+      "logicalName": "crb97_clientdept",
+      "displayName": "Client/Department",
+      "dataType": "String",
+      "maxLength": 200
+    },
+    {
+      "logicalName": "crb97_health",
+      "displayName": "Health Status",
+      "dataType": "Picklist",
+      "options": [
+        {"value": 100000000, "label": "Green"},
+        {"value": 100000001, "label": "Yellow"},
+        {"value": 100000002, "label": "Red"}
+      ]
+    },
+    {
+      "logicalName": "crb97_progress",
+      "displayName": "Progress %",
+      "dataType": "Integer",
+      "minValue": 0,
+      "maxValue": 100
+    }
+  ]
+}
+```
+
+### Relationships
+
+```json
+{
+  "relationships": [
+    {
+      "name": "project_tasks",
+      "type": "OneToMany",
+      "relatedEntity": "crb97_task",
+      "relatedAttribute": "crb97_project"
+    },
+    {
+      "name": "project_milestones",
+      "type": "OneToMany",
+      "relatedEntity": "crb97_milestone",
+      "relatedAttribute": "crb97_project"
+    },
+    {
+      "name": "project_resources",
+      "type": "OneToMany",
+      "relatedEntity": "crb97_resource",
+      "relatedAttribute": "crb97_project"
+    },
+    {
+      "name": "project_risks",
+      "type": "OneToMany",
+      "relatedEntity": "crb97_riskregister",
+      "relatedAttribute": "crb97_project"
+    },
+    {
+      "name": "project_updates",
+      "type": "OneToMany",
+      "relatedEntity": "crb97_projectupdate",
+      "relatedAttribute": "crb97_project"
+    }
+  ]
+}
+```
+
+## Table: Task
+
+**Logical Name:** crb97_task  
+**Display Name:** Task  
+**Plural Name:** Tasks  
+
+### Columns
+
+```json
+{
+  "columns": [
+    {
+      "logicalName": "crb97_taskid",
+      "displayName": "Task ID",
+      "dataType": "Uniqueidentifier",
+      "isPrimaryKey": true
+    },
+    {
+      "logicalName": "crb97_title",
+      "displayName": "Title",
+      "dataType": "String",
+      "maxLength": 200,
+      "required": true,
+      "searchable": true
+    },
+    {
+      "logicalName": "crb97_description",
+      "displayName": "Description",
+      "dataType": "Text",
+      "maxLength": 2000
+    },
+    {
+      "logicalName": "crb97_status",
+      "displayName": "Status",
+      "dataType": "Picklist",
+      "required": true,
+      "options": [
+        {"value": 100000000, "label": "New"},
+        {"value": 100000001, "label": "In Progress"},
+        {"value": 100000002, "label": "Blocked"},
+        {"value": 100000003, "label": "Completed"}
+      ]
+    },
+    {
+      "logicalName": "crb97_priority",
+      "displayName": "Priority",
+      "dataType": "Picklist",
+      "required": true
+    },
+    {
+      "logicalName": "crb97_duedate",
+      "displayName": "Due Date",
+      "dataType": "DateTime",
+      "required": true
+    },
+    {
+      "logicalName": "crb97_assignedto",
+      "displayName": "Assigned To",
+      "dataType": "Lookup",
+      "referenceEntity": "systemuser",
+      "required": true
+    },
+    {
+      "logicalName": "crb97_project",
+      "displayName": "Project",
+      "dataType": "Lookup",
+      "referenceEntity": "crb97_project",
+      "required": true
+    },
+    {
+      "logicalName": "crb97_estimedhours",
+      "displayName": "Estimated Hours",
+      "dataType": "Decimal",
+      "precisionSource": 2,
+      "minValue": 0
+    },
+    {
+      "logicalName": "crb97_actualhours",
+      "displayName": "Actual Hours",
+      "dataType": "Decimal",
+      "precisionSource": 2,
+      "minValue": 0
+    }
+  ]
+}
+```
+
+## Table: TeamMember
+
+**Logical Name:** crb97_teammember  
+**Display Name:** Team Member  
+
+### Columns
+
+```json
+{
+  "columns": [
+    {
+      "logicalName": "crb97_name",
+      "displayName": "Name",
+      "dataType": "String",
+      "maxLength": 200,
+      "required": true
+    },
+    {
+      "logicalName": "crb97_email",
+      "displayName": "Email",
+      "dataType": "String",
+      "maxLength": 100,
+      "format": "Email",
+      "required": true
+    },
+    {
+      "logicalName": "crb97_role",
+      "displayName": "Role",
+      "dataType": "Picklist",
+      "required": true,
+      "options": [
+        {"value": 100000000, "label": "Project Manager"},
+        {"value": 100000001, "label": "Developer"},
+        {"value": 100000002, "label": "QA Engineer"},
+        {"value": 100000003, "label": "Business Analyst"},
+        {"value": 100000004, "label": "UX Designer"}
+      ]
+    },
+    {
+      "logicalName": "crb97_skills",
+      "displayName": "Skills",
+      "dataType": "Text",
+      "maxLength": 500
+    },
+    {
+      "logicalName": "crb97_availability",
+      "displayName": "Availability",
+      "dataType": "Picklist",
+      "required": true,
+      "options": [
+        {"value": 100000000, "label": "Available"},
+        {"value": 100000001, "label": "Busy"},
+        {"value": 100000002, "label": "On Leave"}
+      ]
+    },
+    {
+      "logicalName": "crb97_department",
+      "displayName": "Department",
+      "dataType": "String",
+      "maxLength": 100
+    }
+  ]
+}
+```
+
+## Table: Milestone
+
+**Logical Name:** crb97_milestone  
+**Display Name:** Milestone  
+
+### Columns
+
+```json
+{
+  "columns": [
+    {
+      "logicalName": "crb97_name",
+      "displayName": "Milestone Name",
+      "dataType": "String",
+      "maxLength": 200,
+      "required": true
+    },
+    {
+      "logicalName": "crb97_targetdate",
+      "displayName": "Target Date",
+      "dataType": "DateTime",
+      "required": true
+    },
+    {
+      "logicalName": "crb97_status",
+      "displayName": "Status",
+      "dataType": "Picklist",
+      "required": true,
+      "options": [
+        {"value": 100000000, "label": "Not Started"},
+        {"value": 100000001, "label": "In Progress"},
+        {"value": 100000002, "label": "Completed"}
+      ]
+    },
+    {
+      "logicalName": "crb97_description",
+      "displayName": "Description",
+      "dataType": "Text",
+      "maxLength": 2000
+    },
+    {
+      "logicalName": "crb97_project",
+      "displayName": "Project",
+      "dataType": "Lookup",
+      "referenceEntity": "crb97_project",
+      "required": true
+    },
+    {
+      "logicalName": "crb97_deliverables",
+      "displayName": "Key Deliverables",
+      "dataType": "Text",
+      "maxLength": 500
+    }
+  ]
+}
+```
+
+## Table: Resource
+
+**Logical Name:** crb97_resource  
+**Display Name:** Resource  
+
+### Columns
+
+```json
+{
+  "columns": [
+    {
+      "logicalName": "crb97_teammember",
+      "displayName": "Team Member",
+      "dataType": "Lookup",
+      "referenceEntity": "crb97_teammember",
+      "required": true
+    },
+    {
+      "logicalName": "crb97_project",
+      "displayName": "Project",
+      "dataType": "Lookup",
+      "referenceEntity": "crb97_project",
+      "required": true
+    },
+    {
+      "logicalName": "crb97_role",
+      "displayName": "Role on Project",
+      "dataType": "Picklist",
+      "required": true,
+      "options": [
+        {"value": 100000000, "label": "Lead"},
+        {"value": 100000001, "label": "Senior"},
+        {"value": 100000002, "label": "Mid-Level"},
+        {"value": 100000003, "label": "Junior"}
+      ]
+    },
+    {
+      "logicalName": "crb97_hoursallocated",
+      "displayName": "Hours Allocated",
+      "dataType": "Decimal",
+      "required": true,
+      "minValue": 0
+    },
+    {
+      "logicalName": "crb97_startdate",
+      "displayName": "Start Date",
+      "dataType": "DateTime",
+      "required": true
+    },
+    {
+      "logicalName": "crb97_enddate",
+      "displayName": "End Date",
+      "dataType": "DateTime"
+    }
+  ]
+}
+```
+
+## Table: RiskRegister
+
+**Logical Name:** crb97_riskregister  
+**Display Name:** Risk Register  
+
+### Columns
+
+```json
+{
+  "columns": [
+    {
+      "logicalName": "crb97_description",
+      "displayName": "Risk Description",
+      "dataType": "Text",
+      "maxLength": 2000,
+      "required": true
+    },
+    {
+      "logicalName": "crb97_impact",
+      "displayName": "Impact",
+      "dataType": "Picklist",
+      "required": true,
+      "options": [
+        {"value": 100000000, "label": "Low"},
+        {"value": 100000001, "label": "Medium"},
+        {"value": 100000002, "label": "High"},
+        {"value": 100000003, "label": "Critical"}
+      ]
+    },
+    {
+      "logicalName": "crb97_probability",
+      "displayName": "Probability",
+      "dataType": "Picklist",
+      "required": true,
+      "options": [
+        {"value": 100000000, "label": "Low"},
+        {"value": 100000001, "label": "Medium"},
+        {"value": 100000002, "label": "High"}
+      ]
+    },
+    {
+      "logicalName": "crb97_mitigationplan",
+      "displayName": "Mitigation Plan",
+      "dataType": "Text",
+      "maxLength": 2000
+    },
+    {
+      "logicalName": "crb97_owner",
+      "displayName": "Owner",
+      "dataType": "Lookup",
+      "referenceEntity": "systemuser",
+      "required": true
+    },
+    {
+      "logicalName": "crb97_status",
+      "displayName": "Status",
+      "dataType": "Picklist",
+      "required": true,
+      "options": [
+        {"value": 100000000, "label": "Identified"},
+        {"value": 100000001, "label": "Monitoring"},
+        {"value": 100000002, "label": "Mitigated"},
+        {"value": 100000003, "label": "Closed"}
+      ]
+    },
+    {
+      "logicalName": "crb97_project",
+      "displayName": "Project",
+      "dataType": "Lookup",
+      "referenceEntity": "crb97_project",
+      "required": true
+    }
+  ]
+}
+```
+
+## Table: ProjectUpdate
+
+**Logical Name:** crb97_projectupdate  
+**Display Name:** Project Update  
+
+### Columns
+
+```json
+{
+  "columns": [
+    {
+      "logicalName": "crb97_title",
+      "displayName": "Title",
+      "dataType": "String",
+      "maxLength": 200,
+      "required": true
+    },
+    {
+      "logicalName": "crb97_content",
+      "displayName": "Content",
+      "dataType": "Text",
+      "maxLength": 5000,
+      "required": true
+    },
+    {
+      "logicalName": "crb97_postedby",
+      "displayName": "Posted By",
+      "dataType": "Lookup",
+      "referenceEntity": "systemuser",
+      "required": true
+    },
+    {
+      "logicalName": "crb97_posteddate",
+      "displayName": "Posted Date",
+      "dataType": "DateTime",
+      "required": true
+    },
+    {
+      "logicalName": "crb97_project",
+      "displayName": "Project",
+      "dataType": "Lookup",
+      "referenceEntity": "crb97_project",
+      "required": true
+    },
+    {
+      "logicalName": "crb97_updatetype",
+      "displayName": "Update Type",
+      "dataType": "Picklist",
+      "options": [
+        {"value": 100000000, "label": "Status Update"},
+        {"value": 100000001, "label": "Issue Report"},
+        {"value": 100000002, "label": "Achievement"},
+        {"value": 100000003, "label": "Alert"}
+      ]
+    }
+  ]
+}
+```
+
+---
+
+**Version:** 1.0  
+**Last Updated:** June 10, 2026

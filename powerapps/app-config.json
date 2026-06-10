@@ -1,0 +1,95 @@
+{
+  "appName": "Project Management App",
+  "appVersion": "1.0.0",
+  "appDescription": "Dataverse-driven model-driven app for comprehensive project management",
+  "environment": "Project Management",
+  "publisher": "Krishna Kumar",
+  "appType": "ModelDriven",
+  "settings": {
+    "enableOfflineAccess": true,
+    "enableMobileOptimization": true,
+    "theme": "Modern",
+    "language": "English",
+    "timeZone": "UTC"
+  },
+  "components": {
+    "tables": [
+      "Project",
+      "Task",
+      "TeamMember",
+      "Milestone",
+      "Resource",
+      "RiskRegister",
+      "ProjectUpdate"
+    ]
+  },
+  "siteMap": {
+    "groups": [
+      {
+        "id": "pm_group_projects",
+        "title": "Projects",
+        "subAreas": [
+          {
+            "id": "pm_subarea_projects",
+            "title": "Projects",
+            "entity": "crb97_project"
+          },
+          {
+            "id": "pm_subarea_tasks",
+            "title": "Tasks",
+            "entity": "crb97_task"
+          },
+          {
+            "id": "pm_subarea_milestones",
+            "title": "Milestones",
+            "entity": "crb97_milestone"
+          }
+        ]
+      },
+      {
+        "id": "pm_group_resources",
+        "title": "Resources & Planning",
+        "subAreas": [
+          {
+            "id": "pm_subarea_team",
+            "title": "Team Members",
+            "entity": "crb97_teammember"
+          },
+          {
+            "id": "pm_subarea_resources",
+            "title": "Resource Allocation",
+            "entity": "crb97_resource"
+          }
+        ]
+      },
+      {
+        "id": "pm_group_risks",
+        "title": "Risk Management",
+        "subAreas": [
+          {
+            "id": "pm_subarea_risks",
+            "title": "Risk Register",
+            "entity": "crb97_riskregister"
+          },
+          {
+            "id": "pm_subarea_updates",
+            "title": "Project Updates",
+            "entity": "crb97_projectupdate"
+          }
+        ]
+      }
+    ]
+  },
+  "navigation": {
+    "displayType": "SingleLevel",
+    "enableMobileNav": true
+  },
+  "security": {
+    "roles": [
+      "Project Manager",
+      "Team Member",
+      "Stakeholder",
+      "Admin"
+    ]
+  }
+}

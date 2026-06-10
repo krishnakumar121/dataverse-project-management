@@ -1,0 +1,429 @@
+# Power Automate Flow Definitions
+
+## Flow 1: Task Reminder Notification
+
+### Configuration
+
+```json
+{
+  "name": "Task Reminder Notification",
+  "type": "scheduled",
+  "trigger": {
+    "type": "recurrence",
+    "frequency": "day",
+    "interval": 1,
+    "time": "08:00",
+    "timezone": "UTC"
+  },
+  "actions": [
+    {
+      "name": "Get tasks due soon",
+      "type": "data_operation",
+      "operation": "list_records",
+      "entity": "tasks",
+      "filters": {
+        "status": "<> Completed",
+        "dueDate": "<= @addDays(utcNow(), 2)",
+        "dueDate": ">= @utcNow()"
+      }
+    },
+    {
+      "name": "For each task",
+      "type": "for_each",
+      "items": "@body('Get_tasks_due_soon')?['value']",
+      "actions": [
+        {
+          "name": "Get assigned user",
+          "type": "lookup_record",
+          "entity": "user",
+          "filter": "id = @item().assignedto"
+        },
+        {
+          "name": "Get project name",
+          "type": "lookup_record",
+          "entity": "project",
+          "filter": "id = @item().project"
+        },
+        {
+          "name": "Send reminder email",
+          "type": "send_email",
+          "to": "@body('Get_assigned_user')?['email']",
+          "subject": "Task Reminder: @{item()['title']} due @{formatDateTime(item()['duedate'], 'MM/dd/yyyy')}",
+          "body": "<html><body><h3>Task Reminder</h3><p>Your task <b>@{item()['title']}</b> is due on <b>@{formatDateTime(item()['duedate'], 'MMM dd, yyyy')}</b></p><p>Project: <b>@{body('Get_project_name')?['name']}</b></p><p><a href='@{concat(environment().record_url, item()['id'])}'>View Task</a></p></body></html>",
+          "isBodyHTML": true,
+          "importance": "high"
+        },
+        {
+          "name": "Log activity",
+          "type": "create_record",
+          "entity": "activity",
+          "data": {
+            "subject": "Task reminder sent",
+            "description": "Reminder notification sent to @{body('Get_assigned_user')?['email']}",
+            "activitytype": "email",
+            "regardingobjectid": "@item()['id']"
+          }
+        }
+      ]
+    }
+  ],
+  "errorHandling": {
+    "retryPolicy": {
+      "type": "exponential",
+      "interval": "PT10S",
+      "maxRetries": 3
+    },
+    "on_failure": [
+      {
+        "name": "Log error",
+        "type": "send_notification",
+        "recipient": "admin@company.com",
+        "subject": "Flow Error: Task Reminder Notification"
+      }
+    ]
+  }
+}
+```
+
+---
+
+## Flow 2: Milestone Alert Notification
+
+### Configuration
+
+```json
+{
+  "name": "Milestone Alert Notification",
+  "type": "automated",
+  "trigger": {
+    "type": "record_created_or_updated",
+    "entity": "milestone",
+    "changeType": ["created", "modified"]
+  },
+  "actions": [
+    {
+      "name": "Get project details",
+      "type": "lookup_record",
+      "entity": "project",
+      "filter": "id = @triggerBody()['project']"
+    },
+    {
+      "name": "Check if approaching",
+      "type": "condition",
+      "expression": {
+        "and": [
+          {
+            "less": [
+              "@sub(int(formatDateTime(triggerBody()['targetdate'], 'x')), int(formatDateTime(utcNow(), 'x')))",
+              "@mul(3, 24, 60, 60, 1000)"
+            ]
+          },
+          {
+            "not": {
+              "equals": [
+                "@triggerBody()['status']",
+                "Completed"
+              ]
+            }
+          }
+        ]
+      },
+      "actions_true": [
+        {
+          "name": "Send alert email",
+          "type": "send_email",
+          "to": "@body('Get_project_details')?['owner_email']",
+          "cc": "@body('Get_project_details')?['team_email']",
+          "subject": "ALERT: Milestone '@{triggerBody()['name']}' approaching",
+          "body": "<html><body><h2 style='color:red;'>Milestone Alert</h2><p>The milestone <b>@{triggerBody()['name']}</b> is due on <b>@{formatDateTime(triggerBody()['targetdate'], 'MMM dd, yyyy')}</b></p><p>Key Deliverables:<br/>@{replace(triggerBody()['deliverables'], '\n', '<br/>')}</p><p><a href='@{environment().record_url}'>View Milestone</a></p></body></html>",
+          "isBodyHTML": true,
+          "importance": "high",
+          "categories": "[\"Milestone Alert\"]"
+        },
+        {
+          "name": "Post to Teams",
+          "type": "post_teams_message",
+          "summary": "Milestone Alert",
+          "themeColor": "FF0000",
+          "sections": [
+            {
+              "activityTitle": "Milestone Alert: @{triggerBody()['name']}",
+              "activitySubtitle": "Project: @{body('Get_project_details')?['name']}",
+              "facts": [
+                {
+                  "name": "Due Date",
+                  "value": "@{formatDateTime(triggerBody()['targetdate'], 'MMM dd, yyyy')}"
+                },
+                {
+                  "name": "Status",
+                  "value": "@{triggerBody()['status']}"
+                },
+                {
+                  "name": "Days Until Due",
+                  "value": "@{div(sub(int(formatDateTime(triggerBody()['targetdate'], 'x')), int(formatDateTime(utcNow(), 'x'))), 86400000)}"
+                }
+              ],
+              "potentialAction": [
+                {
+                  "@type": "OpenUri",
+                  "name": "View Milestone",
+                  "targets": [
+                    {
+                      "os": "default",
+                      "uri": "@{environment().record_url}"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
+
+---
+
+## Flow 3: Risk Escalation
+
+### Configuration
+
+```json
+{
+  "name": "Risk Escalation",
+  "type": "automated",
+  "trigger": {
+    "type": "record_created_or_updated",
+    "entity": "riskregister",
+    "changeType": ["created", "modified"]
+  },
+  "variables": [
+    {
+      "name": "riskScore",
+      "type": "integer",
+      "value": "@mul(int(triggerBody()['impact']), int(triggerBody()['probability']))"
+    }
+  ],
+  "actions": [
+    {
+      "name": "Check if high risk",
+      "type": "condition",
+      "expression": {
+        "and": [
+          {
+            "greaterOrEquals": ["@variables('riskScore')", 6]
+          },
+          {
+            "or": [
+              {"equals": ["@triggerBody()['status']", "Identified"]},
+              {"equals": ["@triggerBody()['status']", "Monitoring"]}
+            ]
+          }
+        ]
+      },
+      "actions_true": [
+        {
+          "name": "Get project owner",
+          "type": "lookup_record",
+          "entity": "project",
+          "filter": "id = @triggerBody()['project']",
+          "select": ["owner", "name"]
+        },
+        {
+          "name": "Send escalation email",
+          "type": "send_email",
+          "to": "@body('Get_project_owner')?['owner_email']",
+          "subject": "URGENT: High Risk Item Identified - Score @{variables('riskScore')}",
+          "body": "<html><body><h2 style='color:red;'>⚠️ RISK ESCALATION</h2><p><b>Risk:</b> @{triggerBody()['description']}</p><p><b>Score:</b> @{variables('riskScore')}/9 (Critical)</p><p><b>Impact:</b> @{triggerBody()['impact']}<br/><b>Probability:</b> @{triggerBody()['probability']}</p><p><b>Mitigation Plan:</b><br/>@{triggerBody()['mitigationplan']}</p><p><b>Owner:</b> @{triggerBody()['owner_name']}</p><p><a href='@{environment().record_url}'>View Risk</a></p></body></html>",
+          "isBodyHTML": true,
+          "importance": "high",
+          "needsResponse": true
+        },
+        {
+          "name": "Create escalation task",
+          "type": "create_record",
+          "entity": "task",
+          "data": {
+            "title": "Risk Escalation: @{triggerBody()['description']}",
+            "description": "High-risk item detected. Risk Score: @{variables('riskScore')}",
+            "project": "@{triggerBody()['project']}",
+            "assignedto": "@body('Get_project_owner')?['owner']",
+            "priority": "Critical",
+            "duedate": "@addDays(utcNow(), 1)",
+            "status": "New"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Check if critical",
+      "type": "condition",
+      "expression": {
+        "equals": ["@variables('riskScore')", 9]
+      },
+      "actions_true": [
+        {
+          "name": "Send critical alert to management",
+          "type": "send_email",
+          "to": "management@company.com",
+          "subject": "CRITICAL: Risk Score 9/9 - Immediate Action Required",
+          "body": "<html><body><h1 style='color:red;'>🚨 CRITICAL RISK ALERT</h1><p>A critical risk has been identified requiring immediate management attention.</p><p><b>Risk:</b> @{triggerBody()['description']}</p><p><a href='@{environment().record_url}'>View Risk Details</a></p></body></html>",
+          "isBodyHTML": true,
+          "importance": "high"
+        }
+      ]
+    }
+  ]
+}
+```
+
+---
+
+## Flow 4: Weekly Status Report
+
+### Configuration
+
+```json
+{
+  "name": "Weekly Project Status Report",
+  "type": "scheduled",
+  "trigger": {
+    "type": "recurrence",
+    "frequency": "week",
+    "interval": 1,
+    "daysOfWeek": ["Monday"],
+    "time": "09:00",
+    "timezone": "UTC"
+  },
+  "actions": [
+    {
+      "name": "Get active projects",
+      "type": "data_operation",
+      "operation": "list_records",
+      "entity": "projects",
+      "filters": {
+        "status": "Active"
+      }
+    },
+    {
+      "name": "For each active project",
+      "type": "for_each",
+      "items": "@body('Get_active_projects')?['value']",
+      "actions": [
+        {
+          "name": "Get task statistics",
+          "type": "data_operation",
+          "operation": "get_count",
+          "entity": "tasks",
+          "filters": "project = @item()['id']"
+        },
+        {
+          "name": "Build status summary",
+          "type": "compose",
+          "inputs": {
+            "projectName": "@item()['name']",
+            "owner": "@item()['owner_email']",
+            "status": "@item()['status']",
+            "healthStatus": "@item()['health']",
+            "completionPercent": "@item()['progress']",
+            "totalTasks": "@body('Get_task_statistics')?['value']"
+          }
+        },
+        {
+          "name": "Send status report",
+          "type": "send_email",
+          "to": "@body('Build_status_summary')?['owner']",
+          "subject": "Weekly Status Report: @{body('Build_status_summary')?['projectName']}",
+          "body": "<html><body><h2>Weekly Project Status</h2><p><b>Project:</b> @{body('Build_status_summary')?['projectName']}</p><p><b>Status:</b> @{body('Build_status_summary')?['status']}</p><p><b>Health:</b> @{body('Build_status_summary')?['healthStatus']}</p><p><b>Completion:</b> @{body('Build_status_summary')?['completionPercent']}%</p><p><b>Total Tasks:</b> @{body('Build_status_summary')?['totalTasks']}</p></body></html>",
+          "isBodyHTML": true
+        }
+      ]
+    }
+  ]
+}
+```
+
+---
+
+## Flow 5: Task Status Update Notification
+
+### Configuration
+
+```json
+{
+  "name": "Task Status Update Notification",
+  "type": "automated",
+  "trigger": {
+    "type": "record_updated",
+    "entity": "task",
+    "changeType": "modified"
+  },
+  "conditions": [
+    {
+      "name": "Status changed",
+      "expression": {
+        "not": {
+          "equals": [
+            "@triggerBody()['status']",
+            "@triggerOutputs()['body/previousdata']?['status']"
+          ]
+        }
+      }
+    }
+  ],
+  "actions": [
+    {
+      "name": "Get project owner",
+      "type": "lookup_record",
+      "entity": "project",
+      "filter": "id = @triggerBody()['project']"
+    },
+    {
+      "name": "Send notification",
+      "type": "send_email",
+      "to": "@body('Get_project_owner')?['owner_email']",
+      "subject": "Task Updated: @{triggerBody()['title']} - Status changed to @{triggerBody()['status']}",
+      "body": "<html><body><h3>Task Status Update</h3><p>Task <b>@{triggerBody()['title']}</b> status has changed</p><p><b>New Status:</b> @{triggerBody()['status']}</p><p><b>Assigned To:</b> @{triggerBody()['assignedto_name']}</p><p><b>Due Date:</b> @{formatDateTime(triggerBody()['duedate'], 'MMM dd, yyyy')}</p></body></html>",
+      "isBodyHTML": true
+    }
+  ]
+}
+```
+
+---
+
+## Deployment Instructions
+
+### To Deploy These Flows:
+
+1. **Access Power Automate**
+   - Go to make.powerautomate.com
+   - Select your environment
+
+2. **Create Each Flow**
+   - Go to "New flow"
+   - Select flow type (Cloud flow > Scheduled/Automated/Instant)
+   - Configure trigger
+   - Add actions from specifications above
+   - Configure error handling
+   - Save and test
+
+3. **Testing**
+   - Trigger flow manually
+   - Verify all actions execute
+   - Check email delivery
+   - Validate Teams notifications
+   - Monitor error logs
+
+4. **Activation**
+   - Turn flow "On"
+   - Monitor for 1 week
+   - Make adjustments based on logs
+   - Document any customizations
+
+---
+
+**Version:** 1.0  
+**Last Updated:** June 10, 2026
